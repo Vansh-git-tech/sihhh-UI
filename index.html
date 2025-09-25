@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FloatChat - Modern AI Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar Toggle */
+        .sidebar-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: #2a2a2a;
+            border: none;
+            border-radius: 8px;
+            padding: 8px;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-toggle:hover {
+            background: #3a3a3a;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            height: 100vh;
+            background-color: #2a2a2a;
+            border-right: 1px solid #3a3a3a;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.closed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            font-size: 24px;
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .new-chat-btn {
+            width: 100%;
+            padding: 12px 16px;
+            background: #3a3a3a;
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .new-chat-btn:hover {
+            background: #4a4a4a;
+        }
+
+        .chat-history {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .chat-date {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        .chat-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 4px;
+        }
+
+        .chat-item:hover {
+            background: #3a3a3a;
+        }
+
+        .chat-item.active {
+            background: #4a4a4a;
+        }
+
+        .chat-title {
+            font-size: 14px;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid #3a3a3a;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #4CAF50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .user-name {
+            flex: 1;
+            font-size: 14px;
+            color: #ffffff;
+        }
+
+        /* Chat Interface */
+        .chat-interface {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #1a1a1a;
+            transition: margin-left 0.3s ease;
+            margin-left: 280px;
+        }
+
+        .chat-interface.sidebar-closed {
+            margin-left: 0;
+        }
+
+        .welcome-screen {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .welcome-content {
+            max-width: 400px;
+            padding: 40px;
+        }
+
+        .welcome-icon {
+            font-size: 64px;
+            margin-bottom: 24px;
+        }
+
+        .welcome-content h1 {
+            font-size: 32px;
+            margin-bottom: 16px;
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .welcome-content p {
+            font-size: 16px;
+            color: #888;
+            line-height: 1.5;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            padding-bottom: 0;
+            display: none;
+        }
+
+        .messages-container.active {
+            display: block;
+        }
+
+        .messages {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: #4CAF50;
+        }
+
+        .message.bot .message-avatar {
+            background: #2196F3;
+        }
+
+        .message-content {
+            flex: 1;
+            max-width: 70%;
+        }
+
+        .message.user .message-content {
+            text-align: right;
+        }
+
+        .message-text {
+            background: #2a2a2a;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #ffffff;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-text {
+            background: #4CAF50;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot .message-text {
+            background: #2a2a2a;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #666;
+            margin-top: 4px;
+            padding: 0 4px;
+        }
+
+        .input-container {
+            padding: 20px;
+            border-top: 1px solid #3a3a3a;
+        }
+
+        .input-form {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: flex-end;
+            background: #2a2a2a;
+            border-radius: 24px;
+            padding: 12px 16px;
+            gap: 12px;
+            border: 1px solid #3a3a3a;
+            transition: border-color 0.2s ease;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #4CAF50;
+        }
+
+        .message-input {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: #ffffff;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            min-height: 20px;
+            font-family: inherit;
+        }
+
+        .message-input::placeholder {
+            color: #666;
+        }
+
+        .input-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .attach-btn,
+        .send-btn {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .attach-btn:hover {
+            background: #3a3a3a;
+            color: #ffffff;
+        }
+
+        .send-btn {
+            color: #4CAF50;
+        }
+
+        .send-btn:hover {
+            background: #4CAF50;
+            color: #ffffff;
+        }
+
+        .input-footer {
+            margin-top: 12px;
+        }
+
+        .input-options {
+            display: flex;
+            gap: 8px;
+        }
+
+        .option-btn {
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            color: #888;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .option-btn.active {
+            background: #4CAF50;
+            border-color: #4CAF50;
+            color: #ffffff;
+        }
+
+        .option-btn:hover:not(.active) {
+            background: #3a3a3a;
+            color: #ffffff;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #2a2a2a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                max-width: 320px;
+            }
+            
+            .chat-interface {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar Toggle Button -->
+        <button class="sidebar-toggle" onclick="toggleSidebar()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">🤖</div>
+                    <span class="logo-text">FloatChat</span>
+                </div>
+            </div>
+
+            <div class="sidebar-content">
+                <button class="new-chat-btn" onclick="createNewChat()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    New chat
+                </button>
+
+                <div class="chat-history">
+                    <div class="chat-date">2025-07</div>
+                    <div class="chat-item active" onclick="selectChat(1)">
+                        <div class="chat-title">Social Identity Theory in Labahua...</div>
+                    </div>
+                    <div class="chat-item" onclick="selectChat(2)">
+                        <div class="chat-title">DMart's Growth Strategy and Fx...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">V</div>
+                    <span class="user-name">Vansh Pansari</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Interface -->
+        <div class="chat-interface" id="chatInterface">
+            <!-- Welcome Screen -->
+            <div class="welcome-screen" id="welcomeScreen">
+                <div class="welcome-content">
+                    <div class="welcome-icon">🤖</div>
+                    <h1>How can I help you?</h1>
+                    <p>Start a new conversation or select a chat from the sidebar</p>
+                </div>
+            </div>
+
+            <!-- Messages Container -->
+            <div class="messages-container" id="messagesContainer">
+                <div class="messages" id="messages">
+                    <!-- Messages will be added here dynamically -->
+                </div>
+            </div>
+
+            <!-- Input Container -->
+            <div class="input-container">
+                <form class="input-form" onsubmit="sendMessage(event)">
+                    <div class="input-wrapper">
+                        <textarea 
+                            id="messageInput"
+                            placeholder="Message FloatChat"
+                            class="message-input"
+                            rows="1"
+                            onkeypress="handleKeyPress(event)"
+                        ></textarea>
+                        <div class="input-actions">
+                            <button type="button" class="attach-btn">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M21.44 11.05L12.25 20.24C11.1242 21.3658 9.59722 21.9983 8.005 21.9983C6.41278 21.9983 4.88583 21.3658 3.76 20.24C2.63417 19.1142 2.00166 17.5872 2.00166 15.995C2.00166 14.4028 2.63417 12.8758 3.76 11.75L12.33 3.18C13.0806 2.42944 14.0985 2.00867 15.16 2.00867C16.2215 2.00867 17.2394 2.42944 17.99 3.18C18.7406 3.93056 19.1613 4.94844 19.1613 6.01C19.1613 7.07156 18.7406 8.08944 17.99 8.84L9.41 17.41C9.03494 17.7851 8.52556 17.9957 7.995 17.9957C7.46444 17.9957 6.95506 17.7851 6.58 17.41C6.20494 17.0349 5.99434 16.5256 5.99434 15.995C5.99434 15.4644 6.20494 14.9551 6.58 14.58L14.5 6.66" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                            <button type="submit" class="send-btn">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="input-footer">
+                        <div class="input-options">
+                            <button type="button" class="option-btn active">
+                                🤖 FloatThink
+                            </button>
+                            <button type="button" class="option-btn">
+                                🔍 Search
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isSidebarOpen = true;
+        let currentChatId = null;
+        let messages = [];
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const chatInterface = document.getElementById('chatInterface');
+            
+            isSidebarOpen = !isSidebarOpen;
+            
+            if (isSidebarOpen) {
+                sidebar.classList.remove('closed');
+                chatInterface.classList.remove('sidebar-closed');
+            } else {
+                sidebar.classList.add('closed');
+                chatInterface.classList.add('sidebar-closed');
+            }
+        }
+
+        function createNewChat() {
+            currentChatId = Date.now();
+            messages = [];
+            showChatInterface();
+            document.getElementById('messageInput').focus();
+            
+            // Remove active class from all chat items
+            document.querySelectorAll('.chat-item').forEach(item => {
+                item.classList.remove('active');
+            });
+        }
+
+        function selectChat(chatId) {
+            currentChatId = chatId;
+            showChatInterface();
+            
+            // Remove active class from all chat items
+            document.querySelectorAll('.chat-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to selected chat
+            event.target.closest('.chat-item').classList.add('active');
+            
+            // Load sample messages for demo
+            if (chatId === 1) {
+                messages = [
+                    { id: 1, text: "Can you explain Social Identity Theory?", sender: "user", timestamp: new Date() },
+                    { id: 2, text: "Social Identity Theory, developed by Henri Tajfel and John Turner, explains how individuals categorize themselves and others into social groups. It suggests that people derive part of their identity from the groups they belong to and tend to favor their in-group over out-groups.", sender: "bot", timestamp: new Date() }
+                ];
+            } else if (chatId === 2) {
+                messages = [
+                    { id: 1, text: "What is DMart's business strategy?", sender: "user", timestamp: new Date() },
+                    { id: 2, text: "DMart follows a unique retail strategy focused on everyday low pricing (EDLP). They maintain low operational costs through efficient supply chain management, direct sourcing from manufacturers, and minimal advertising expenses.", sender: "bot", timestamp: new Date() }
+                ];
+            }
+            
+            renderMessages();
+        }
+
+        function showChatInterface() {
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('messagesContainer').classList.add('active');
+        }
+
+        function showWelcomeScreen() {
+            document.getElementById('welcomeScreen').style.display = 'flex';
+            document.getElementById('messagesContainer').classList.remove('active');
+        }
+
+        function sendMessage(event) {
+            event.preventDefault();
+            
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            
+            if (!text || !currentChatId) return;
+            
+            // Add user message
+            const userMessage = {
+                id: Date.now(),
+                text: text,
+                sender: 'user',
+                timestamp: new Date()
+            };
+            
+            messages.push(userMessage);
+            input.value = '';
+            renderMessages();
+            
+            // Simulate bot response
+            setTimeout(() => {
+                const botMessage = {
+                    id: Date.now() + 1,
+                    text: `I understand you're asking about "${text}". This is a simulated response from FloatChat. In a real implementation, this would connect to an AI service to provide intelligent responses.`,
+                    sender: 'bot',
+                    timestamp: new Date()
+                };
+                
+                messages.push(botMessage);
+                renderMessages();
+            }, 1000);
+        }
+
+        function renderMessages() {
+            const messagesContainer = document.getElementById('messages');
+            messagesContainer.innerHTML = '';
+            
+            messages.forEach(message => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${message.sender}`;
+                
+                const time = message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                messageDiv.innerHTML = `
+                    <div class="message-avatar">${message.sender === 'user' ? '👤' : '🤖'}</div>
+                    <div class="message-content">
+                        <div class="message-text">${message.text}</div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                `;
+                
+                messagesContainer.appendChild(messageDiv);
+            });
+            
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage(event);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            showWelcomeScreen();
+        });
+    </script>
+</body>
+</html>
